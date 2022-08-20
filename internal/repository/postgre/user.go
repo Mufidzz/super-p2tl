@@ -7,6 +7,40 @@ import (
 	"github.com/SuperP2TL/Backend/presentation"
 )
 
+func (db *Postgre) GetUserPassword(username string) (res *presentation.GetUserPasswordResponse, err error) {
+	q := `SELECT id, username, password, role from dt_user WHERE username = $1 LIMIT 1 OFFSET 0`
+
+	rows, err := db.chiefDatabase.Master.Queryx(q, username)
+	if err != nil {
+		return nil, response.InternalError{
+			Type:         "Repo",
+			Name:         "Postgre",
+			FunctionName: "GetUserPassword",
+			Description:  "failed running queryx",
+			Trace:        err,
+		}.Error()
+	}
+
+	for rows.Next() {
+		var _t presentation.GetUserPasswordResponse
+
+		err = rows.StructScan(&_t)
+		if err != nil {
+			return nil, response.InternalError{
+				Type:         "Repo",
+				Name:         "Postgre",
+				FunctionName: "GetUserPassword",
+				Description:  "failed scan",
+				Trace:        err,
+			}.Error()
+		}
+
+		res = &_t
+	}
+
+	return res, nil
+}
+
 func (db *Postgre) GetDataPetugas(filter *presentation.FilterParamUserData, pagination presentation.Pagination) (res []presentation.GetDataPetugasResponse, err error) {
 	q := `SELECT id, fullname FROM dt_user`
 
@@ -70,7 +104,50 @@ func (db *Postgre) AssignToSoToUser(userID int64, toSoIDs []int64) (id int64, er
 		paramCount += queryParamLen
 	}
 
-	rows, err := db.chiefDatabase.Master.Queryx(q[:len(q)-1], paramArgs...)
+	rows, err := db.chiefDatabase.Master.Queryx(fmt.Sprintf("%s RETURNING id", q[:len(q)-1]), paramArgs...)
+	if err != nil {
+		return 0, response.InternalError{
+			Type:         "Repo",
+			Name:         "Postgre",
+			FunctionName: "AssignToSoToUser",
+			Description:  "failed exec",
+			Trace:        err,
+		}.Error()
+	}
+
+	for rows.Next() {
+		err := rows.Scan(&id)
+		if err != nil {
+			return 0, response.InternalError{
+				Type:         "Repo",
+				Name:         "Postgre",
+				FunctionName: "AssignToSoToUser",
+				Description:  "failed scan",
+				Trace:        err,
+			}.Error()
+		}
+	}
+
+	return id, nil
+}
+
+func (db *Postgre) AssignTemuanToUser(userID int64, temuanIDs []int64) (id int64, err error) {
+	q := `INSERT INTO dt_user_temuan (temuan_id, user_id) VALUES`
+
+	queryParamLen := 2
+
+	paramCount := 1
+	paramArgs := []interface{}{}
+
+	for _, v := range temuanIDs {
+		q = fmt.Sprintf("%s ($%d::BIGINT, $%d::BIGINT),", q, paramCount, paramCount+1)
+		paramArgs = append(paramArgs, v, userID)
+		paramCount += queryParamLen
+	}
+
+	q = fmt.Sprintf("%s RETURNING id", q[:len(q)-1])
+
+	rows, err := db.chiefDatabase.Master.Queryx(q, paramArgs...)
 	if err != nil {
 		return 0, response.InternalError{
 			Type:         "Repo",

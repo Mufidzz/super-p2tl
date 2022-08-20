@@ -2,6 +2,9 @@ package usecase
 
 type Repositories struct {
 	TOSORepo
+	DILRepo
+	ReportRepo
+	TemuanRepo
 }
 
 type Usecase struct {
