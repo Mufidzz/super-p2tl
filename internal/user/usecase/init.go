@@ -2,6 +2,9 @@ package usecase
 
 type Repositories struct {
 	UserRepo
+	RoomEventRepo
+	TOSORepo
+	TemuanRepo
 }
 
 type Usecase struct {

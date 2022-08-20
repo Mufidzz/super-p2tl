@@ -10,12 +10,15 @@ type Domain struct {
 	Usecase *usecase.Usecase
 }
 
-func StartHTTP(router *gin.Engine, tosoRepo usecase.TOSORepo) *Domain {
+func StartHTTP(router *gin.Engine, tosoRepo usecase.TOSORepo, dilRepo usecase.DILRepo, reportRepo usecase.ReportRepo, temuanRepo usecase.TemuanRepo) *Domain {
 	uc := usecase.New(&usecase.Repositories{
-		TOSORepo: tosoRepo,
+		TOSORepo:   tosoRepo,
+		DILRepo:    dilRepo,
+		ReportRepo: reportRepo,
+		TemuanRepo: temuanRepo,
 	})
 
-	httpHandler := rest.NewHTTP(router, uc)
+	httpHandler := rest.NewHTTP(router, uc, uc, uc, uc)
 	httpHandler.SetRoutes()
 
 	return &Domain{

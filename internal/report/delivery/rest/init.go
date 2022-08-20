@@ -3,6 +3,7 @@ package rest
 import "github.com/gin-gonic/gin"
 
 type Usecases struct {
+	ReportUC
 }
 
 type HTTPHandler struct {
@@ -10,18 +11,23 @@ type HTTPHandler struct {
 	usecases Usecases
 }
 
-func NewHTTP(router *gin.Engine) *HTTPHandler {
+func NewHTTP(router *gin.Engine, reportUC ReportUC) *HTTPHandler {
 	return &HTTPHandler{
 		router: router,
+		usecases: Usecases{
+			ReportUC: reportUC,
+		},
 	}
 }
 
 func (handler *HTTPHandler) SetRoutes() {
 	router := handler.router
-	uaa := router.Group("/report")
+	report := router.Group("/report")
 	{
-		uaa.POST("/performance")
-		uaa.POST("/temuan")
-		uaa.POST("/penormalan")
+		report.GET("/finish/toso/:user-toso-id", handler.HandlerFinishTOSOCheck)
+		report.GET("/temuan/kwh-report", handler.HandleGetPerformanceKwhReport)
+		report.POST("/temuan", handler.HandlerCreateFindingReports)
+		report.GET("/temuan/mangkrak", handler.HandleGetListTemuanMangkrak)
+		report.POST("/penormalan", handler.HandleCreateSinglePenormalanReports)
 	}
 }
